@@ -1,73 +1,151 @@
-import { Redirect, Route } from 'react-router-dom';
+import React, { useRef, useState } from "react";
 import {
   IonApp,
-  IonIcon,
+  IonHeader,
+  IonFooter,
+  IonContent,
+  IonInput,
+  IonToolbar,
+  IonTitle,
+  IonItem,
   IonLabel,
-  IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
-} from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
-import Tab1 from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonAlert,
+} from "@ionic/react";
+import BmiControlls from "./components/BmiControlls";
+import BmiResult from "./components/BmiResult";
+import InputControl from "./components/inputControl";
 
 /* Core CSS required for Ionic components to work properly */
-import '@ionic/react/css/core.css';
+import "@ionic/react/css/core.css";
 
 /* Basic CSS for apps built with Ionic */
-import '@ionic/react/css/normalize.css';
-import '@ionic/react/css/structure.css';
-import '@ionic/react/css/typography.css';
+import "@ionic/react/css/normalize.css";
+import "@ionic/react/css/structure.css";
+import "@ionic/react/css/typography.css";
 
 /* Optional CSS utils that can be commented out */
-import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
-import '@ionic/react/css/flex-utils.css';
-import '@ionic/react/css/display.css';
+import "@ionic/react/css/padding.css";
+import "@ionic/react/css/float-elements.css";
+import "@ionic/react/css/text-alignment.css";
+import "@ionic/react/css/text-transformation.css";
+import "@ionic/react/css/flex-utils.css";
+import "@ionic/react/css/display.css";
 
 /* Theme variables */
-import './theme/variables.css';
+import "./theme/variables.css";
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/tab1">
-            <Tab1 />
-          </Route>
-          <Route exact path="/tab2">
-            <Tab2 />
-          </Route>
-          <Route path="/tab3">
-            <Tab3 />
-          </Route>
-          <Route exact path="/">
-            <Redirect to="/tab1" />
-          </Route>
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon icon={square} />
-            <IonLabel>Tab 3</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
-    </IonReactRouter>
-  </IonApp>
-);
+const App: React.FC = () => {
+  const weightInputRef = useRef<HTMLIonInputElement>(null);
+  const heightInputRef = useRef<HTMLIonInputElement>(null);
+
+  const [calculatedBmi, setCalculatedBmi] = useState<number>();
+  const [error, setError] = useState<string>();
+  const [CalUnits, SetCalUnits] = useState<"mkg" | "ftlbs">("mkg");
+
+  const calculateBMI = () => {
+    const enteredWeight = weightInputRef.current?.value;
+    const enteredHeight = heightInputRef.current?.value;
+
+    if (
+      !enteredWeight ||
+      !enteredHeight ||
+      +enteredHeight <= 0 ||
+      +enteredWeight <= 0
+    ) {
+      // alert("please enter valid not-negative number!");
+      setError("please enter valid not-negative number!");
+      return;
+    }
+
+
+    const weightConversionFactor=CalUnits==="ftlbs"?2.2:1;
+    const heightConversionFactor=CalUnits==="ftlbs"?3.28:1;
+
+    const weight=+enteredWeight/weightConversionFactor;
+    const height=+enteredHeight/heightConversionFactor;
+    
+    const bmi = weight / (+height * +height);
+    
+    console.log(bmi);
+    setCalculatedBmi(bmi);
+  };
+
+  const resetFunc = () => {
+    weightInputRef.current!.value = "";
+    heightInputRef.current!.value = "";
+  };
+
+  const clearError = () => {
+    setError("");
+  };
+
+  const selectControlValueHandler = (selectedValue: "mkg" | "ftlbs") => {
+    SetCalUnits(selectedValue);
+  };
+
+  return (
+    <React.Fragment>
+      <IonAlert
+        isOpen={!!error}
+        message={error}
+        buttons={[
+          {
+            text: "okay",
+            handler: clearError,
+          },
+        ]}
+      />
+      <IonApp>
+        <IonHeader>
+          <IonToolbar color="primary">
+            <IonTitle>BMI Calculator</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonContent className="ion-padding">
+          <IonGrid className="ion-text-center ion-margin">
+            <IonRow>
+              <IonCol>
+                <InputControl
+                  selectedValue={CalUnits}
+                  onSelectValue={selectControlValueHandler}
+                ></InputControl>
+              </IonCol>
+            </IonRow>
+            <IonRow>
+              <IonCol>
+                <IonItem>
+                  <IonLabel position="floating">your height  ({CalUnits ==="mkg" ? "meters":"feet"})</IonLabel>
+                  <IonInput type="number" ref={heightInputRef}></IonInput>
+                </IonItem>
+              </IonCol>
+            </IonRow>
+
+            <IonRow>
+              <IonCol>
+                <IonItem>
+                  <IonLabel position="floating">your weight  ({CalUnits ==="mkg" ? "kg":"lps"})</IonLabel>
+                  <IonInput type="number" ref={weightInputRef}></IonInput>
+                </IonItem>
+              </IonCol>
+            </IonRow>
+
+            <BmiControlls onCalculate={calculateBMI} onReset={resetFunc} />
+            {calculatedBmi && <BmiResult result={calculatedBmi} />}
+          </IonGrid>
+        </IonContent>
+
+        <IonFooter>
+          <IonToolbar color="primary">
+            <IonTitle>Footer</IonTitle>
+          </IonToolbar>
+        </IonFooter>
+      </IonApp>
+    </React.Fragment>
+  );
+};
 
 export default App;
